@@ -3,171 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NutriSnap - Análise Inteligente de Alimentos</title>
+    <title>NutriSnap - Transforme seu Corpo</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
 
-        <!-- VIEW 1: WELCOME -->
+        <!-- VIEW 1: WELCOME (HIGH CONVERSION) -->
         <main id="view-welcome" class="view active">
+            <div class="welcome-overlay"></div>
             <div class="welcome-content">
-                <div class="logo-hero">
-                    <span class="icon-hero">🥗</span>
-                    <h1>NutriSnap</h1>
-                </div>
-                <h2>Conquiste o corpo dos seus sonhos.</h2>
-                <p>Descubra exatamente o que tem no seu prato usando a nossa Inteligência Artificial e alcance seus objetivos mais rápido.</p>
-                <button id="btn-start" class="primary-btn-wide">Começar Agora</button>
+                <div class="trust-badge">⭐⭐⭐⭐⭐ 4.9/5 (12K+ Avaliações)</div>
+                <h1 class="pro-title">Descubra exatamente o que seu corpo precisa.</h1>
+                <p class="pro-subtitle">Sem dietas malucas. Use a IA para escanear seus pratos e alcance sua melhor versão em semanas.</p>
+                
+                <ul class="pro-benefits">
+                    <li>✓ Análise de calorias por foto</li>
+                    <li>✓ Plano hiper-personalizado</li>
+                    <li>✓ Resultados visíveis em 21 dias</li>
+                </ul>
+
+                <button class="pro-btn pulse-glow" onclick="app.startWizard()">FAZER MINHA AVALIAÇÃO GRÁTIS</button>
+                <p class="secure-text">🔒 Menos de 2 minutos • 100% Confidencial</p>
             </div>
         </main>
 
-        <!-- VIEW 2: REGISTER -->
-        <main id="view-register" class="view">
-            <div class="form-content">
-                <h2>Crie sua conta</h2>
-                <p>Para salvarmos o seu perfil e personalizar sua dieta.</p>
-                <input type="email" id="user-email" placeholder="Seu melhor e-mail" class="input-field">
-                <input type="password" id="user-pass" placeholder="Crie uma senha" class="input-field">
-                <button id="btn-register" class="primary-btn-wide">Criar Perfil Seguro</button>
+        <!-- VIEW 2: ONBOARDING WIZARD -->
+        <main id="view-wizard" class="view">
+            <div class="pro-header">
+                <div class="progress-bar-pro"><div id="wizard-progress"></div></div>
+                <button class="back-btn" onclick="app.wizardBack()">← Voltar</button>
             </div>
-        </main>
-
-        <!-- VIEW 3: ONBOARDING WIZARD -->
-        <main id="view-onboarding" class="view">
-            <div class="progress-bar"><div id="progress-fill"></div></div>
             
-            <div class="wizard-container">
-                <!-- Step 1 -->
-                <div class="wizard-step active" data-step="1">
-                    <h2>Qual é o seu principal objetivo?</h2>
-                    <div class="options-grid">
-                        <button class="option-btn" data-goal="emagrecer">🔥 Perder Peso (Secar)</button>
-                        <button class="option-btn" data-goal="ganhar">💪 Ganhar Massa Muscular</button>
-                        <button class="option-btn" data-goal="manter">🥑 Manter a Saúde</button>
+            <div class="wizard-content">
+                <!-- Step 1: Goal -->
+                <div class="w-step active" data-step="1">
+                    <h2>Qual é o seu objetivo principal?</h2>
+                    <p class="w-sub">Isso define toda a base da sua IA.</p>
+                    <div class="pro-options">
+                        <button class="pro-opt" onclick="app.wizardNext('emagrecer')">
+                            <span class="emoji">🔥</span>
+                            <div><strong>Queimar Gordura</strong><br><small>Quero emagrecer e secar</small></div>
+                        </button>
+                        <button class="pro-opt" onclick="app.wizardNext('ganhar')">
+                            <span class="emoji">💪</span>
+                            <div><strong>Ganhar Massa Muscular</strong><br><small>Quero crescer forte</small></div>
+                        </button>
+                        <button class="pro-opt" onclick="app.wizardNext('manter')">
+                            <span class="emoji">🥑</span>
+                            <div><strong>Saúde e Disposição</strong><br><small>Manter peso e ter energia</small></div>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Step 2 -->
-                <div class="wizard-step" data-step="2">
-                    <h2>Qual é o seu gênero?</h2>
-                    <div class="options-grid">
-                        <button class="option-btn">Masculino</button>
-                        <button class="option-btn">Feminino</button>
+                <!-- Step 2: Obstacle -->
+                <div class="w-step" data-step="2">
+                    <h2>O que mais tem te impedido?</h2>
+                    <p class="w-sub">Seja honesto com você mesmo.</p>
+                    <div class="pro-options">
+                        <button class="pro-opt" onclick="app.wizardNext()">Falta de tempo para cozinhar</button>
+                        <button class="pro-opt" onclick="app.wizardNext()">Sinto muita fome/ansiedade</button>
+                        <button class="pro-opt" onclick="app.wizardNext()">Não sei o que é saudável</button>
+                        <button class="pro-opt" onclick="app.wizardNext()">Falta de motivação</button>
                     </div>
                 </div>
 
-                <!-- Step 3 -->
-                <div class="wizard-step" data-step="3">
-                    <h2>Como é a sua rotina hoje?</h2>
-                    <div class="options-grid">
-                        <button class="option-btn">Sedentária (Pouco movimento)</button>
-                        <button class="option-btn">Ativa (Exercícios 3x na semana)</button>
-                        <button class="option-btn">Muito Ativa (Treino diário)</button>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="wizard-step" data-step="4">
-                    <h2>Últimos detalhes para a IA</h2>
-                    <p class="subtitle">Precisamos disso para calcular suas calorias diárias.</p>
-                    <input type="number" id="user-age" placeholder="Sua Idade (ex: 25)" class="input-field">
-                    <input type="number" id="user-weight" placeholder="Seu Peso em KG (ex: 70)" class="input-field">
-                    <button id="btn-finish-wizard" class="primary-btn-wide mt-2">Salvar Meu Perfil</button>
+                <!-- Step 3: Stats -->
+                <div class="w-step" data-step="3">
+                    <h2>Para calcular seu metabolismo</h2>
+                    <p class="w-sub">A IA precisa dessas métricas exatas.</p>
+                    
+                    <label class="pro-label">Sua Idade</label>
+                    <input type="number" id="inp-age" class="pro-input" placeholder="Anos" required>
+                    
+                    <label class="pro-label">Seu Peso Atual (kg)</label>
+                    <input type="number" id="inp-weight" class="pro-input" placeholder="Ex: 75" required>
+                    
+                    <label class="pro-label">Sua Meta de Peso (kg)</label>
+                    <input type="number" id="inp-goal-weight" class="pro-input" placeholder="Ex: 65" required>
+                    
+                    <button class="pro-btn mt-4" onclick="app.finishWizard()">CONTINUAR</button>
                 </div>
             </div>
         </main>
 
-        <!-- VIEW 4: CAMERA (AHA MOMENT) -->
+        <!-- VIEW 3: FAKE ANALYSIS (Value builder) -->
+        <main id="view-analysis" class="view">
+            <div class="analysis-content">
+                <div class="spinner-pro"></div>
+                <h2>Construindo seu Perfil</h2>
+                <ul class="analysis-list" id="analysis-list">
+                    <li>Avaliando metabolismo base...</li>
+                    <li class="hidden">Calculando taxa de queima...</li>
+                    <li class="hidden">Analisando obstáculos...</li>
+                    <li class="hidden">Gerando algoritmo NutriSnap...</li>
+                </ul>
+            </div>
+        </main>
+
+        <!-- VIEW 4: EMAIL CAPTURE -->
+        <main id="view-capture" class="view">
+            <div class="capture-content">
+                <div class="success-icon">✅</div>
+                <h2>Seu plano está 100% pronto!</h2>
+                <p>O algoritmo encontrou o caminho perfeito para você chegar aos <strong id="show-goal-weight"></strong>kg.</p>
+                
+                <div class="capture-box">
+                    <p>Para onde devemos enviar seu dossiê e salvar seu progresso?</p>
+                    <input type="email" id="user-email" class="pro-input" placeholder="Digite seu melhor e-mail">
+                    <button class="pro-btn" onclick="app.submitEmail()">VER MEU RESULTADO AGORA</button>
+                    <p class="spam-text">Nós odiamos spam. Seus dados estão seguros.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- VIEW 5: PROJECTION CHART -->
+        <main id="view-chart" class="view">
+            <div class="chart-content">
+                <h2>Projeção de Sucesso</h2>
+                <p>Se você utilizar a IA do NutriSnap todos os dias, este será o seu resultado projetado:</p>
+                
+                <div class="fake-chart">
+                    <!-- Um grafico visual feito em CSS -->
+                    <div class="chart-bar" style="height: 100%;"><span>Hoje</span></div>
+                    <div class="chart-bar" style="height: 80%;"><span>Mês 1</span></div>
+                    <div class="chart-bar" style="height: 50%;"><span>Mês 2</span></div>
+                    <div class="chart-bar" style="height: 30%; background:#10b981;"><span>Meta</span></div>
+                </div>
+                <p class="chart-date">Você pode alcançar sua meta em: <strong id="target-date"></strong></p>
+
+                <div class="gift-box">
+                    <h3>🎁 Presente de Boas Vindas</h3>
+                    <p>Liberamos 1 Análise de Prato Gratuita na nossa Câmera IA para você testar agora mesmo!</p>
+                    <button class="pro-btn mt-2" onclick="app.openCamera()">TESTAR CÂMERA IA</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- VIEW 6: CAMERA -->
         <main id="view-camera" class="view">
-            <header>
-                <div class="logo">
-                    <span class="icon">🥗</span>
-                    <h1>NutriSnap</h1>
-                </div>
-            </header>
-            
-            <div class="free-badge">Você tem 1 análise gratuita! 🎁</div>
-
+            <div class="camera-header">
+                <span>Análise IA (1/1 Grátis)</span>
+            </div>
             <div class="camera-wrapper">
                 <video id="camera-stream" autoplay playsinline></video>
                 <div class="scanner-overlay"></div>
             </div>
             <div class="controls">
-                <p>Aponte para a sua refeição e escaneie</p>
-                <button id="capture-btn" class="primary-btn pulse">
-                    <div class="inner-circle"></div>
+                <button class="capture-btn-pro" onclick="app.capturePhoto()">
+                    <div class="capture-inner"></div>
                 </button>
+                <p>Tire uma foto do seu prato</p>
             </div>
             <canvas id="canvas" style="display:none;"></canvas>
         </main>
 
-        <!-- VIEW 5: LOADING -->
+        <!-- VIEW 7: SCAN LOADING -->
         <main id="view-loading" class="view">
             <div class="loader-container">
                 <div class="ai-scanner">
                     <img id="preview-image" src="" alt="Imagem Capturada">
                     <div class="scan-line"></div>
                 </div>
-                <h2>Analisando com Inteligência Artificial...</h2>
-                <p>Cruzando os dados do prato com o seu objetivo de <strong id="loading-goal">...</strong></p>
+                <h2>Lendo Nutrientes...</h2>
+                <p>A IA está esquadrinhando as proteínas, carboidratos e gorduras do seu prato.</p>
             </div>
         </main>
 
-        <!-- VIEW 6: RESULTS -->
+        <!-- VIEW 8: RESULTS & PAYWALL TRIGGER -->
         <main id="view-result" class="view">
-            <div class="result-header">
-                <h2 id="food-name">Prato Identificado</h2>
-                <div class="calories-badge">
-                    <span id="food-calories">0</span>
-                    <small>Kcal</small>
+            <div class="result-content">
+                <div class="result-header">
+                    <h2 id="food-name">Prato Identificado</h2>
+                    <div class="calories-badge">
+                        <span id="food-calories">0</span><small>Kcal</small>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Feedback da IA personalizado -->
-            <div id="ai-feedback" class="ai-feedback">
-                <h4 id="feedback-title">Análise do seu objetivo</h4>
-                <p id="feedback-text">A IA está avaliando...</p>
-            </div>
+                <div id="ai-feedback" class="ai-feedback">
+                    <h4 id="feedback-title">Análise</h4>
+                    <p id="feedback-text">Avaliando...</p>
+                </div>
 
-            <div class="macros-grid">
-                <div class="macro-card protein">
-                    <div class="macro-icon">🥩</div>
-                    <div class="macro-info"><span>Proteínas</span><h3 id="food-protein">0g</h3></div>
+                <div class="macros-grid">
+                    <div class="macro-card protein"><div class="macro-icon">🥩</div><div class="macro-info"><span>Proteínas</span><h3 id="food-protein">0g</h3></div></div>
+                    <div class="macro-card carbs"><div class="macro-icon">🌾</div><div class="macro-info"><span>Carbos</span><h3 id="food-carbs">0g</h3></div></div>
+                    <div class="macro-card fats"><div class="macro-icon">🥑</div><div class="macro-info"><span>Gorduras</span><h3 id="food-fats">0g</h3></div></div>
                 </div>
-                <div class="macro-card carbs">
-                    <div class="macro-icon">🌾</div>
-                    <div class="macro-info"><span>Carboidratos</span><h3 id="food-carbs">0g</h3></div>
-                </div>
-                <div class="macro-card fats">
-                    <div class="macro-icon">🥑</div>
-                    <div class="macro-info"><span>Gorduras</span><h3 id="food-fats">0g</h3></div>
-                </div>
-            </div>
 
-            <button id="reset-btn" class="primary-btn-wide">Escanear Nova Refeição</button>
+                <div class="limit-warning">
+                    <p>⚠️ Você atingiu seu limite gratuito de 1 escaneamento.</p>
+                </div>
+                <button class="pro-btn btn-gold" onclick="app.showPaywall()">DESBLOQUEAR ACESSO ILIMITADO</button>
+            </div>
         </main>
 
-        <!-- VIEW 7: PAYWALL (CHECKOUT) -->
-        <main id="view-paywall" class="view">
+        <!-- VIEW 9: HARD PAYWALL (O CHECKOUT PROFISSIONAL) -->
+        <main id="view-paywall" class="view paywall-bg">
             <div class="paywall-content">
-                <div class="lock-icon">🔒</div>
-                <h2>Limite Gratuito Atingido</h2>
-                <p>Você usou sua análise grátis. Para continuar transformando seu corpo e escaneando refeições ilimitadas, libere o NutriSnap Premium.</p>
+                <div class="urgency-bar">A OFERTA ACABA EM: <strong id="timer">14:59</strong></div>
                 
-                <div class="price-box">
-                    <span class="price">R$ 19,90</span><small>/mês</small>
+                <h2>Seu acesso completo ao NutriSnap</h2>
+                <p class="pw-sub">Para quem está sério sobre mudar de corpo, sem dietas chatas.</p>
+
+                <div class="pricing-card">
+                    <div class="discount-tag">70% OFF HOJE</div>
+                    <div class="old-price">De R$ 97,00 por apenas</div>
+                    <div class="new-price">R$ 19,90<small>/mês</small></div>
+                    <ul class="pw-benefits">
+                        <li>✅ Câmera Inteligente Ilimitada</li>
+                        <li>✅ Plano de refeições dinâmico</li>
+                        <li>✅ Rastreador de jejum e água</li>
+                        <li>✅ Acompanhamento de peso</li>
+                    </ul>
                 </div>
-                
-                <ul class="benefits">
-                    <li>✅ Análises Ilimitadas por IA</li>
-                    <li>✅ Adaptação diária da sua dieta</li>
-                    <li>✅ Dicas Personalizadas em Tempo Real</li>
-                </ul>
-                
-                <button class="primary-btn-wide premium-btn" onclick="alert('Isso redirecionaria para a tela de pagamento real (Stripe/Hotmart).')">Assinar Premium Agora</button>
-                <button id="btn-back-camera" class="text-btn">Voltar</button>
+
+                <button class="pro-btn btn-gold pulse-glow mt-4" onclick="alert('Redirecionando para Stripe/Checkout')">ASSINAR AGORA E COMEÇAR</button>
+
+                <div class="guarantee-box">
+                    <span class="shield">🛡️</span>
+                    <p><strong>Garantia Incondicional de 7 Dias.</strong><br>Se você não amar os resultados, devolvemos 100% do seu dinheiro. Sem perguntas.</p>
+                </div>
+
+                <div class="testimonials">
+                    <h3>O que dizem:</h3>
+                    <div class="test-card">
+                        <p>"Perdi 6kg no primeiro mês só tirando foto dos pratos. A IA avisa quando estou exagerando antes mesmo de eu comer!"</p>
+                        <small>⭐⭐⭐⭐⭐ - Mariana T.</small>
+                    </div>
+                </div>
             </div>
         </main>
 
