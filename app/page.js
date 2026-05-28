@@ -137,7 +137,10 @@ export default function NutriSnapFunnel() {
             <div className="welcome-content">
                 <div className="trust-badge">⭐⭐⭐⭐⭐ 4.9/5 (12K+ Avaliações)</div>
                 <h1 className="pro-title">Descubra o que o seu corpo realmente precisa.</h1>
-                <p className="pro-subtitle">Responda a pesquisa rápida e libere seu leitor de pratos personalizado.</p>
+                <div className="alert-box">
+                    <span className="alert-icon">⚠️</span>
+                    <p className="alert-text">Pare de sabotar seus resultados comendo porcarias sem saber!</p>
+                </div>
                 <ul className="pro-benefits">
                     <li>✓ Análise de calorias por foto</li>
                     <li>✓ Feedback instantâneo</li>
