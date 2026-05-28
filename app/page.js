@@ -19,6 +19,8 @@ export default function NutriSnapFunnel() {
     const [foodData, setFoodData] = useState(null);
     const [photoSrc, setPhotoSrc] = useState('');
     const [loadingTexts, setLoadingTexts] = useState(['Sincronizando seus objetivos...']);
+    const [analysisLoading, setAnalysisLoading] = useState(false);
+    const [analysisStatus, setAnalysisStatus] = useState('');
     
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -79,7 +81,7 @@ export default function NutriSnapFunnel() {
         }
     };
 
-    const capturePhoto = () => {
+    const capturePhoto = async () => {
         if (limitReached) {
             stopCamera();
             setView('paywall');
@@ -95,7 +97,8 @@ export default function NutriSnapFunnel() {
         if (video.videoWidth > 0) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         else { ctx.fillStyle = "#111"; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
-        setPhotoSrc(canvas.toDataURL('image/jpeg'));
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        setPhotoSrc(imageData);
         stopCamera();
 
         // Increment limit
@@ -103,7 +106,75 @@ export default function NutriSnapFunnel() {
         setLimitReached(true);
 
         setView('loading');
-        setTimeout(() => showResults(), 3500);
+        setAnalysisLoading(true);
+        setAnalysisStatus('Identificando alimentos...');
+
+        try {
+            // Call the AI analysis API
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    image: imageData,
+                    userGoal: goal 
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.identified) {
+                setAnalysisStatus('Calculando valores nutricionais...');
+                await new Promise(r => setTimeout(r, 1000));
+                
+                const hour = new Date().getHours();
+                let eatNowStatus = "SIM, mas com moderacao.";
+                if (hour > 22 || hour < 6) eatNowStatus = "NAO. Ja e muito tarde, evite carboidratos pesados agora.";
+                else if (hour > 11 && hour < 15) eatNowStatus = "SIM, excelente horario para sua refeicao principal.";
+
+                let fbClass = "ai-feedback success";
+                let fbTitle = "Veredito Positivo";
+                let fbText = data.recommendation;
+
+                if (goal === 'emagrecer' && data.carbs > 50) {
+                    fbClass = "ai-feedback danger";
+                    fbTitle = "Alerta de Carboidrato";
+                } else if (!data.isHealthy) {
+                    fbClass = "ai-feedback warning";
+                    fbTitle = "Atencao";
+                }
+
+                setFoodData({ 
+                    name: data.foodName,
+                    items: data.items,
+                    cal: data.calories, 
+                    p: data.protein, 
+                    c: data.carbs, 
+                    f: data.fat,
+                    fiber: data.fiber,
+                    v: data.nutritionalValue, 
+                    eatNowStatus, 
+                    fbClass, 
+                    fbTitle, 
+                    fbText 
+                });
+                setView('result');
+            } else {
+                setAnalysisStatus('Nao foi possivel identificar o alimento. Tente novamente.');
+                await new Promise(r => setTimeout(r, 2000));
+                localStorage.setItem('free_analyses', '0');
+                setLimitReached(false);
+                openCamera();
+            }
+        } catch (error) {
+            console.log('[v0] Analysis error:', error);
+            setAnalysisStatus('Erro na analise. Tente novamente.');
+            await new Promise(r => setTimeout(r, 2000));
+            localStorage.setItem('free_analyses', '0');
+            setLimitReached(false);
+            openCamera();
+        } finally {
+            setAnalysisLoading(false);
+        }
     };
 
     const stopCamera = () => {
@@ -528,8 +599,11 @@ export default function NutriSnapFunnel() {
                     <img src={photoSrc} alt="Imagem Capturada" />
                     <div className="scan-line"></div>
                 </div>
-                <h2>Identificando Nutrientes...</h2>
-                <p>Mapeando proteínas, carboidratos e vitaminas.</p>
+                <h2>{analysisStatus || 'Identificando Nutrientes...'}</h2>
+                <p>A IA esta analisando sua refeicao</p>
+                <div className="analysis-dots">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
         </main>
     );
@@ -544,24 +618,40 @@ export default function NutriSnapFunnel() {
                     </div>
                 </div>
 
+                {foodData.items && foodData.items.length > 0 && (
+                    <div className="identified-items">
+                        <span className="items-label">Alimentos identificados:</span>
+                        <div className="items-list">
+                            {foodData.items.map((item, idx) => (
+                                <span key={idx} className="food-tag">{item}</span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div className={foodData.fbClass}>
                     <h4>{foodData.fbTitle}</h4>
                     <p>{foodData.fbText}</p>
                 </div>
 
                 <div className="eat-now-box">
-                    <span>🤔 Devo comer isso agora?</span>
+                    <span>Devo comer isso agora?</span>
                     <strong>{foodData.eatNowStatus}</strong>
                 </div>
 
                 <div className="macros-grid">
-                    <div className="macro-card protein"><div className="macro-icon">🥩</div><div className="macro-info"><span>Proteínas</span><h3>{foodData.p}g</h3></div></div>
-                    <div className="macro-card carbs"><div className="macro-icon">🌾</div><div className="macro-info"><span>Carboidratos</span><h3>{foodData.c}g</h3></div></div>
-                    <div className="macro-card fats"><div className="macro-icon">🥑</div><div className="macro-info"><span>Gorduras</span><h3>{foodData.f}g</h3></div></div>
-                    <div className="macro-card vitamins"><div className="macro-icon">🍎</div><div className="macro-info"><span>Vitaminas/Fibras</span><h3>{foodData.v}</h3></div></div>
+                    <div className="macro-card protein"><div className="macro-icon">P</div><div className="macro-info"><span>Proteinas</span><h3>{foodData.p}g</h3></div></div>
+                    <div className="macro-card carbs"><div className="macro-icon">C</div><div className="macro-info"><span>Carboidratos</span><h3>{foodData.c}g</h3></div></div>
+                    <div className="macro-card fats"><div className="macro-icon">G</div><div className="macro-info"><span>Gorduras</span><h3>{foodData.f}g</h3></div></div>
+                    <div className="macro-card fiber"><div className="macro-icon">F</div><div className="macro-info"><span>Fibras</span><h3>{foodData.fiber || 0}g</h3></div></div>
                 </div>
 
-                <div className="limit-warning mt-4"><p>⚠️ Limite gratuito atingido. Desbloqueie para ler mais pratos.</p></div>
+                <div className="nutritional-value">
+                    <span>Valor Nutricional:</span>
+                    <strong className={`nv-${(foodData.v || 'medio').toLowerCase()}`}>{foodData.v || 'Medio'}</strong>
+                </div>
+
+                <div className="limit-warning mt-4"><p>Limite gratuito atingido. Desbloqueie para ler mais pratos.</p></div>
                 <button className="pro-btn btn-gold" onClick={() => setView('paywall')}>DESBLOQUEAR LEITOR ILIMITADO</button>
             </div>
         </main>
