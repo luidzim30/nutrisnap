@@ -7,10 +7,20 @@ export default function NutriSnapFunnel() {
     const [goal, setGoal] = useState('');
     const [limitReached, setLimitReached] = useState(false);
     
+    // User Profile States
+    const [userName, setUserName] = useState('');
+    const [userAge, setUserAge] = useState('');
+    const [userWeight, setUserWeight] = useState('');
+    const [userHeight, setUserHeight] = useState('');
+    const [userGender, setUserGender] = useState('');
+    const [registerStep, setRegisterStep] = useState(1);
+    
     // Result States
     const [foodData, setFoodData] = useState(null);
     const [photoSrc, setPhotoSrc] = useState('');
     const [loadingTexts, setLoadingTexts] = useState(['Sincronizando seus objetivos...']);
+    const [analysisLoading, setAnalysisLoading] = useState(false);
+    const [analysisStatus, setAnalysisStatus] = useState('');
     
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -25,14 +35,14 @@ export default function NutriSnapFunnel() {
         }
     }, []);
 
-    const startWizard = () => setView('wizard');
+    const startWizard = () => setView('register');
 
     const nextStep = (selectedGoal = null) => {
         if (selectedGoal) {
             setGoal(selectedGoal);
             localStorage.setItem('user_goal', selectedGoal);
         }
-        if (step < 10) setStep(step + 1);
+        if (step < 9) setStep(step + 1);
     };
 
     const finishWizard = () => {
@@ -71,7 +81,7 @@ export default function NutriSnapFunnel() {
         }
     };
 
-    const capturePhoto = () => {
+    const capturePhoto = async () => {
         if (limitReached) {
             stopCamera();
             setView('paywall');
@@ -87,7 +97,8 @@ export default function NutriSnapFunnel() {
         if (video.videoWidth > 0) ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         else { ctx.fillStyle = "#111"; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
-        setPhotoSrc(canvas.toDataURL('image/jpeg'));
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        setPhotoSrc(imageData);
         stopCamera();
 
         // Increment limit
@@ -95,7 +106,75 @@ export default function NutriSnapFunnel() {
         setLimitReached(true);
 
         setView('loading');
-        setTimeout(() => showResults(), 3500);
+        setAnalysisLoading(true);
+        setAnalysisStatus('Identificando alimentos...');
+
+        try {
+            // Call the AI analysis API
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    image: imageData,
+                    userGoal: goal 
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.identified) {
+                setAnalysisStatus('Calculando valores nutricionais...');
+                await new Promise(r => setTimeout(r, 1000));
+                
+                const hour = new Date().getHours();
+                let eatNowStatus = "SIM, mas com moderacao.";
+                if (hour > 22 || hour < 6) eatNowStatus = "NAO. Ja e muito tarde, evite carboidratos pesados agora.";
+                else if (hour > 11 && hour < 15) eatNowStatus = "SIM, excelente horario para sua refeicao principal.";
+
+                let fbClass = "ai-feedback success";
+                let fbTitle = "Veredito Positivo";
+                let fbText = data.recommendation;
+
+                if (goal === 'emagrecer' && data.carbs > 50) {
+                    fbClass = "ai-feedback danger";
+                    fbTitle = "Alerta de Carboidrato";
+                } else if (!data.isHealthy) {
+                    fbClass = "ai-feedback warning";
+                    fbTitle = "Atencao";
+                }
+
+                setFoodData({ 
+                    name: data.foodName,
+                    items: data.items,
+                    cal: data.calories, 
+                    p: data.protein, 
+                    c: data.carbs, 
+                    f: data.fat,
+                    fiber: data.fiber,
+                    v: data.nutritionalValue, 
+                    eatNowStatus, 
+                    fbClass, 
+                    fbTitle, 
+                    fbText 
+                });
+                setView('result');
+            } else {
+                setAnalysisStatus('Nao foi possivel identificar o alimento. Tente novamente.');
+                await new Promise(r => setTimeout(r, 2000));
+                localStorage.setItem('free_analyses', '0');
+                setLimitReached(false);
+                openCamera();
+            }
+        } catch (error) {
+            console.log('[v0] Analysis error:', error);
+            setAnalysisStatus('Erro na analise. Tente novamente.');
+            await new Promise(r => setTimeout(r, 2000));
+            localStorage.setItem('free_analyses', '0');
+            setLimitReached(false);
+            openCamera();
+        } finally {
+            setAnalysisLoading(false);
+        }
     };
 
     const stopCamera = () => {
@@ -131,6 +210,201 @@ export default function NutriSnapFunnel() {
     };
 
     // ------------- RENDERERS -------------
+    
+    // TELA DE CADASTRO PROFISSIONAL
+    if (view === 'register') return (
+        <main className="view active">
+            <div className="register-container">
+                <div className="register-header">
+                    <div className="register-progress">
+                        <div className="register-progress-fill" style={{width: `${(registerStep/5)*100}%`}}></div>
+                    </div>
+                    <span className="register-step-label">Passo {registerStep} de 5</span>
+                </div>
+                
+                <div className="register-content">
+                    {registerStep === 1 && (
+                        <div className="register-step">
+                            <div className="register-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <h2>Como podemos te chamar?</h2>
+                            <p className="register-subtitle">Seu nome vai aparecer no seu perfil personalizado</p>
+                            <input 
+                                type="text" 
+                                className="pro-input register-input" 
+                                placeholder="Digite seu nome" 
+                                value={userName}
+                                onChange={(e) => setUserName(e.target.value)}
+                            />
+                            <button 
+                                className="pro-btn register-btn" 
+                                onClick={() => userName.trim() && setRegisterStep(2)}
+                                disabled={!userName.trim()}
+                            >
+                                CONTINUAR
+                            </button>
+                        </div>
+                    )}
+                    
+                    {registerStep === 2 && (
+                        <div className="register-step">
+                            <div className="register-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 6v6l4 2"/>
+                                </svg>
+                            </div>
+                            <h2>Qual a sua idade?</h2>
+                            <p className="register-subtitle">Usamos para calcular seu metabolismo basal</p>
+                            <input 
+                                type="number" 
+                                className="pro-input register-input" 
+                                placeholder="Ex: 28 anos" 
+                                value={userAge}
+                                onChange={(e) => setUserAge(e.target.value)}
+                            />
+                            <button 
+                                className="pro-btn register-btn" 
+                                onClick={() => userAge && setRegisterStep(3)}
+                                disabled={!userAge}
+                            >
+                                CONTINUAR
+                            </button>
+                        </div>
+                    )}
+                    
+                    {registerStep === 3 && (
+                        <div className="register-step">
+                            <div className="register-icon gender-icon">
+                                <span>M</span>
+                                <span>F</span>
+                            </div>
+                            <h2>Qual o seu sexo biológico?</h2>
+                            <p className="register-subtitle">Importante para calcular suas necessidades calóricas</p>
+                            <div className="gender-options">
+                                <button 
+                                    className={`gender-btn ${userGender === 'M' ? 'active' : ''}`}
+                                    onClick={() => setUserGender('M')}
+                                >
+                                    <span className="gender-emoji">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="10" cy="14" r="5"/>
+                                            <path d="M19 5l-5.4 5.4M19 5h-5M19 5v5"/>
+                                        </svg>
+                                    </span>
+                                    <span>Masculino</span>
+                                </button>
+                                <button 
+                                    className={`gender-btn ${userGender === 'F' ? 'active' : ''}`}
+                                    onClick={() => setUserGender('F')}
+                                >
+                                    <span className="gender-emoji">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="8" r="5"/>
+                                            <path d="M12 13v8M9 18h6"/>
+                                        </svg>
+                                    </span>
+                                    <span>Feminino</span>
+                                </button>
+                            </div>
+                            <button 
+                                className="pro-btn register-btn" 
+                                onClick={() => userGender && setRegisterStep(4)}
+                                disabled={!userGender}
+                            >
+                                CONTINUAR
+                            </button>
+                        </div>
+                    )}
+                    
+                    {registerStep === 4 && (
+                        <div className="register-step">
+                            <div className="register-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                    <path d="M12 2v20M2 12h20"/>
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                            </div>
+                            <h2>Qual o seu peso atual?</h2>
+                            <p className="register-subtitle">Em quilogramas (kg)</p>
+                            <div className="weight-input-wrapper">
+                                <input 
+                                    type="number" 
+                                    className="pro-input register-input" 
+                                    placeholder="Ex: 75" 
+                                    value={userWeight}
+                                    onChange={(e) => setUserWeight(e.target.value)}
+                                />
+                                <span className="input-suffix">kg</span>
+                            </div>
+                            <button 
+                                className="pro-btn register-btn" 
+                                onClick={() => userWeight && setRegisterStep(5)}
+                                disabled={!userWeight}
+                            >
+                                CONTINUAR
+                            </button>
+                        </div>
+                    )}
+                    
+                    {registerStep === 5 && (
+                        <div className="register-step">
+                            <div className="register-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                    <path d="M12 22V2M2 12h2M20 12h2M4 4l2 2M18 4l-2 2"/>
+                                </svg>
+                            </div>
+                            <h2>Qual a sua altura?</h2>
+                            <p className="register-subtitle">Em centimetros (cm)</p>
+                            <div className="weight-input-wrapper">
+                                <input 
+                                    type="number" 
+                                    className="pro-input register-input" 
+                                    placeholder="Ex: 175" 
+                                    value={userHeight}
+                                    onChange={(e) => setUserHeight(e.target.value)}
+                                />
+                                <span className="input-suffix">cm</span>
+                            </div>
+                            <button 
+                                className="pro-btn register-btn" 
+                                onClick={() => {
+                                    if (userHeight) {
+                                        localStorage.setItem('user_profile', JSON.stringify({
+                                            name: userName,
+                                            age: userAge,
+                                            gender: userGender,
+                                            weight: userWeight,
+                                            height: userHeight
+                                        }));
+                                        setView('wizard');
+                                    }
+                                }}
+                                disabled={!userHeight}
+                            >
+                                FINALIZAR CADASTRO
+                            </button>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="register-footer">
+                    <div className="secure-badge">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span>Seus dados estao seguros e protegidos</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    );
+
     if (view === 'welcome') return (
         <main className="view active">
             <div className="welcome-overlay"></div>
@@ -154,51 +428,42 @@ export default function NutriSnapFunnel() {
     if (view === 'wizard') return (
         <main className="view active">
             <div className="pro-header">
-                <div className="progress-bar-pro"><div className="wizard-progress" style={{width: `${(step/10)*100}%`}}></div></div>
+                <div className="progress-bar-pro"><div className="wizard-progress" style={{width: `${(step/9)*100}%`}}></div></div>
             </div>
             <div className="wizard-content">
                 {step === 1 && (
                     <div className="w-step">
-                        <h2>1. Qual é o seu objetivo principal?</h2>
+                        <h2>1. Qual o seu objetivo principal?</h2>
                         <div className="pro-options">
                             <button className="pro-opt" onClick={() => nextStep('emagrecer')}><span className="emoji">🔥</span><div><strong>Emagrecer</strong></div></button>
                             <button className="pro-opt" onClick={() => nextStep('ganhar')}><span className="emoji">💪</span><div><strong>Ganhar Massa</strong></div></button>
-                            <button className="pro-opt" onClick={() => nextStep('manter')}><span className="emoji">🥑</span><div><strong>Manter a Saúde</strong></div></button>
+                            <button className="pro-opt" onClick={() => nextStep('manter')}><span className="emoji">🥑</span><div><strong>Manter a Saude</strong></div></button>
                         </div>
                     </div>
                 )}
                 {step === 2 && (
                     <div className="w-step">
-                        <h2>2. Qual o seu gênero?</h2>
+                        <h2>2. Como e sua rotina de exercicios?</h2>
                         <div className="pro-options">
-                            <button className="pro-opt" onClick={() => nextStep()}>Masculino</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Feminino</button>
-                        </div>
-                    </div>
-                )}
-                {step === 3 && (
-                    <div className="w-step">
-                        <h2>3. Como é sua rotina de exercícios?</h2>
-                        <div className="pro-options">
-                            <button className="pro-opt" onClick={() => nextStep()}>Sedentária</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Sedentaria</button>
                             <button className="pro-opt" onClick={() => nextStep()}>Leve (1 a 2x semana)</button>
                             <button className="pro-opt" onClick={() => nextStep()}>Intensa (3x ou mais)</button>
                         </div>
                     </div>
                 )}
-                {step === 4 && (
+                {step === 3 && (
                     <div className="w-step">
-                        <h2>4. Quantas refeições você faz por dia?</h2>
+                        <h2>3. Quantas refeicoes voce faz por dia?</h2>
                         <div className="pro-options">
-                            <button className="pro-opt" onClick={() => nextStep()}>1 a 2 (Faço Jejum)</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>1 a 2 (Faco Jejum)</button>
                             <button className="pro-opt" onClick={() => nextStep()}>3 a 4</button>
                             <button className="pro-opt" onClick={() => nextStep()}>5 ou mais</button>
                         </div>
                     </div>
                 )}
-                {step === 5 && (
+                {step === 4 && (
                     <div className="w-step">
-                        <h2>5. Você bebe bastante água?</h2>
+                        <h2>4. Voce bebe bastante agua?</h2>
                         <div className="pro-options">
                             <button className="pro-opt" onClick={() => nextStep()}>Menos de 1 litro</button>
                             <button className="pro-opt" onClick={() => nextStep()}>1 a 2 litros</button>
@@ -206,54 +471,64 @@ export default function NutriSnapFunnel() {
                         </div>
                     </div>
                 )}
-                {step === 6 && (
+                {step === 5 && (
                     <div className="w-step">
-                        <h2>6. Como é a qualidade do seu sono?</h2>
+                        <h2>5. Como e a qualidade do seu sono?</h2>
                         <div className="pro-options">
                             <button className="pro-opt" onClick={() => nextStep()}>Ruim (Acordo muito)</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Razoável</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Razoavel</button>
                             <button className="pro-opt" onClick={() => nextStep()}>Excelente (Durmo a noite toda)</button>
+                        </div>
+                    </div>
+                )}
+                {step === 6 && (
+                    <div className="w-step">
+                        <h2>6. Sente muita fome a noite?</h2>
+                        <div className="pro-options">
+                            <button className="pro-opt" onClick={() => nextStep()}>Sim, muita</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>As vezes</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Nao, durmo sem fome</button>
                         </div>
                     </div>
                 )}
                 {step === 7 && (
                     <div className="w-step">
-                        <h2>7. Sente muita fome à noite?</h2>
+                        <h2>7. Voce tem alguma restricao alimentar?</h2>
                         <div className="pro-options">
-                            <button className="pro-opt" onClick={() => nextStep()}>Sim, muita</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Às vezes</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Não, durmo sem fome</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Nenhuma</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Vegetariano / Vegano</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Intolerancia</button>
                         </div>
                     </div>
                 )}
                 {step === 8 && (
                     <div className="w-step">
-                        <h2>8. Você tem alguma restrição alimentar?</h2>
-                        <div className="pro-options">
-                            <button className="pro-opt" onClick={() => nextStep()}>Nenhuma</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Vegetariano / Vegano</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Intolerância</button>
-                        </div>
-                    </div>
-                )}
-                {step === 9 && (
-                    <div className="w-step">
-                        <h2>9. O que mais te impede de ter o corpo ideal?</h2>
+                        <h2>8. O que mais te impede de ter o corpo ideal?</h2>
                         <div className="pro-options">
                             <button className="pro-opt" onClick={() => nextStep()}>Falta de tempo</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Não sei escolher os alimentos</button>
-                            <button className="pro-opt" onClick={() => nextStep()}>Falta de motivação</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Nao sei escolher os alimentos</button>
+                            <button className="pro-opt" onClick={() => nextStep()}>Falta de motivacao</button>
                             <button className="pro-opt" onClick={() => nextStep()}>Ansiedade e Doces</button>
                         </div>
                     </div>
                 )}
-                {step === 10 && (
-                    <div className="w-step">
-                        <h2>10. Últimos detalhes</h2>
-                        <p className="w-sub">Para calcular seu gasto calórico exato.</p>
-                        <input type="number" className="pro-input" placeholder="Anos" />
-                        <input type="number" className="pro-input mt-2" placeholder="Ex: 75kg" />
-                        <button className="pro-btn mt-4" onClick={finishWizard}>CONCLUIR E LIBERAR APP</button>
+                {step === 9 && (
+                    <div className="w-step final-step">
+                        <div className="final-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </div>
+                        <h2>Perfil Completo!</h2>
+                        <p className="final-subtitle">Seu leitor de pratos esta pronto para ser ativado, {userName || 'Usuario'}!</p>
+                        <div className="profile-summary">
+                            <div className="summary-item"><span>Objetivo</span><strong>{goal === 'emagrecer' ? 'Emagrecer' : goal === 'ganhar' ? 'Ganhar Massa' : 'Manter Saude'}</strong></div>
+                            <div className="summary-item"><span>Idade</span><strong>{userAge} anos</strong></div>
+                            <div className="summary-item"><span>Peso</span><strong>{userWeight} kg</strong></div>
+                            <div className="summary-item"><span>Altura</span><strong>{userHeight} cm</strong></div>
+                        </div>
+                        <button className="pro-btn pulse-glow" onClick={finishWizard}>LIBERAR MEU LEITOR AGORA</button>
                     </div>
                 )}
             </div>
@@ -324,8 +599,11 @@ export default function NutriSnapFunnel() {
                     <img src={photoSrc} alt="Imagem Capturada" />
                     <div className="scan-line"></div>
                 </div>
-                <h2>Identificando Nutrientes...</h2>
-                <p>Mapeando proteínas, carboidratos e vitaminas.</p>
+                <h2>{analysisStatus || 'Identificando Nutrientes...'}</h2>
+                <p>A IA esta analisando sua refeicao</p>
+                <div className="analysis-dots">
+                    <span></span><span></span><span></span>
+                </div>
             </div>
         </main>
     );
@@ -340,24 +618,40 @@ export default function NutriSnapFunnel() {
                     </div>
                 </div>
 
+                {foodData.items && foodData.items.length > 0 && (
+                    <div className="identified-items">
+                        <span className="items-label">Alimentos identificados:</span>
+                        <div className="items-list">
+                            {foodData.items.map((item, idx) => (
+                                <span key={idx} className="food-tag">{item}</span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <div className={foodData.fbClass}>
                     <h4>{foodData.fbTitle}</h4>
                     <p>{foodData.fbText}</p>
                 </div>
 
                 <div className="eat-now-box">
-                    <span>🤔 Devo comer isso agora?</span>
+                    <span>Devo comer isso agora?</span>
                     <strong>{foodData.eatNowStatus}</strong>
                 </div>
 
                 <div className="macros-grid">
-                    <div className="macro-card protein"><div className="macro-icon">🥩</div><div className="macro-info"><span>Proteínas</span><h3>{foodData.p}g</h3></div></div>
-                    <div className="macro-card carbs"><div className="macro-icon">🌾</div><div className="macro-info"><span>Carboidratos</span><h3>{foodData.c}g</h3></div></div>
-                    <div className="macro-card fats"><div className="macro-icon">🥑</div><div className="macro-info"><span>Gorduras</span><h3>{foodData.f}g</h3></div></div>
-                    <div className="macro-card vitamins"><div className="macro-icon">🍎</div><div className="macro-info"><span>Vitaminas/Fibras</span><h3>{foodData.v}</h3></div></div>
+                    <div className="macro-card protein"><div className="macro-icon">P</div><div className="macro-info"><span>Proteinas</span><h3>{foodData.p}g</h3></div></div>
+                    <div className="macro-card carbs"><div className="macro-icon">C</div><div className="macro-info"><span>Carboidratos</span><h3>{foodData.c}g</h3></div></div>
+                    <div className="macro-card fats"><div className="macro-icon">G</div><div className="macro-info"><span>Gorduras</span><h3>{foodData.f}g</h3></div></div>
+                    <div className="macro-card fiber"><div className="macro-icon">F</div><div className="macro-info"><span>Fibras</span><h3>{foodData.fiber || 0}g</h3></div></div>
                 </div>
 
-                <div className="limit-warning mt-4"><p>⚠️ Limite gratuito atingido. Desbloqueie para ler mais pratos.</p></div>
+                <div className="nutritional-value">
+                    <span>Valor Nutricional:</span>
+                    <strong className={`nv-${(foodData.v || 'medio').toLowerCase()}`}>{foodData.v || 'Medio'}</strong>
+                </div>
+
+                <div className="limit-warning mt-4"><p>Limite gratuito atingido. Desbloqueie para ler mais pratos.</p></div>
                 <button className="pro-btn btn-gold" onClick={() => setView('paywall')}>DESBLOQUEAR LEITOR ILIMITADO</button>
             </div>
         </main>
