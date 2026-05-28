@@ -137,7 +137,10 @@ export default function NutriSnapFunnel() {
             <div className="welcome-content">
                 <div className="trust-badge">⭐⭐⭐⭐⭐ 4.9/5 (12K+ Avaliações)</div>
                 <h1 className="pro-title">Descubra o que o seu corpo realmente precisa.</h1>
-                <p className="pro-subtitle">Responda a pesquisa rápida e libere seu leitor de pratos personalizado.</p>
+                <div className="alert-box">
+                    <span className="alert-icon">⚠️</span>
+                    <p className="alert-text">Pare de sabotar seus resultados comendo porcarias sem saber!</p>
+                </div>
                 <ul className="pro-benefits">
                     <li>✓ Análise de calorias por foto</li>
                     <li>✓ Feedback instantâneo</li>
@@ -273,14 +276,42 @@ export default function NutriSnapFunnel() {
 
     if (view === 'camera') return (
         <main className="view active">
-            <div className="camera-header"><span>Leitor de Pratos (1 Análise Livre)</span></div>
+            <div className="camera-header">
+                <span className="camera-badge">IA Pronta</span>
+                <span>Leitor Nutricional Ativo</span>
+            </div>
             <div className="camera-wrapper">
                 <video ref={videoRef} autoPlay playsInline></video>
-                <div className="scanner-overlay"></div>
+                <div className="scanner-overlay">
+                    <div className="corner tl"></div>
+                    <div className="corner tr"></div>
+                    <div className="corner bl"></div>
+                    <div className="corner br"></div>
+                </div>
+                <div className="camera-pulse"></div>
             </div>
             <div className="controls">
-                <button className="capture-btn-pro" onClick={capturePhoto}><div className="capture-inner"></div></button>
-                <p>Tire a foto do prato agora</p>
+                <div className="camera-instruction">
+                    <div className="instruction-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                    </div>
+                    <div className="instruction-text">
+                        <strong>Centralize seu prato na moldura</strong>
+                        <span>Quanto melhor a foto, mais precisa a análise</span>
+                    </div>
+                </div>
+                <button className="capture-btn-pro pulse-capture" onClick={capturePhoto}>
+                    <div className="capture-inner">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                </button>
+                <p className="capture-cta">Toque para analisar agora</p>
             </div>
             <canvas ref={canvasRef} style={{display: 'none'}}></canvas>
         </main>
