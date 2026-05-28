@@ -2,10 +2,6 @@ const app = {
     views: {},
     state: {
         goal: '',
-        age: '',
-        weight: '',
-        goalWeight: '',
-        email: ''
     },
     stream: null,
     freeAnalysesUsed: parseInt(localStorage.getItem('free_analyses') || '0'),
@@ -16,10 +12,9 @@ const app = {
             this.views[v.id] = v;
         });
 
-        // Check if user already used free trial and has email
-        if(localStorage.getItem('user_email') && this.freeAnalysesUsed >= 1) {
+        // Check trial limit
+        if(this.freeAnalysesUsed >= 1) {
             this.switchView('view-paywall');
-            this.startTimer();
         }
     },
 
@@ -28,7 +23,7 @@ const app = {
         this.views[viewId].classList.add('active');
     },
 
-    // ---- WIZARD FLOW ----
+    // ---- WIZARD FLOW (10 STEPS) ----
     currentStep: 1,
     startWizard() {
         this.switchView('view-wizard');
@@ -47,38 +42,14 @@ const app = {
         }
     },
 
-    wizardBack() {
-        if(this.currentStep > 1) {
-            const steps = document.querySelectorAll('.w-step');
-            steps[this.currentStep-1].classList.remove('active');
-            this.currentStep--;
-            steps[this.currentStep-1].classList.add('active');
-            this.updateProgress();
-        } else {
-            this.switchView('view-welcome');
-        }
-    },
-
     updateProgress() {
         const total = document.querySelectorAll('.w-step').length;
         document.getElementById('wizard-progress').style.width = `${(this.currentStep/total)*100}%`;
     },
 
     finishWizard() {
-        const age = document.getElementById('inp-age').value;
-        const w = document.getElementById('inp-weight').value;
-        const gw = document.getElementById('inp-goal-weight').value;
-
-        if(!age || !w || !gw) {
-            alert("Preencha todos os campos para a IA poder calcular.");
-            return;
-        }
-
-        this.state.age = age;
-        this.state.weight = w;
-        this.state.goalWeight = gw;
-        
-        document.getElementById('show-goal-weight').textContent = gw;
+        // Save goal
+        localStorage.setItem('user_goal', this.state.goal);
 
         this.switchView('view-analysis');
         this.runFakeAnalysis();
@@ -90,37 +61,16 @@ const app = {
         let index = 0;
 
         const interval = setInterval(() => {
-            if(index > 0) listItems[index-1].style.color = "#10b981"; // success color
+            if(index > 0) listItems[index-1].style.color = "#10b981"; 
             
             if(index < listItems.length) {
                 listItems[index].classList.remove('hidden');
                 index++;
             } else {
                 clearInterval(interval);
-                setTimeout(() => this.switchView('view-capture'), 800);
+                setTimeout(() => this.openCamera(), 1000);
             }
-        }, 1200);
-    },
-
-    // ---- EMAIL CAPTURE ----
-    submitEmail() {
-        const email = document.getElementById('user-email').value;
-        if(!email || !email.includes('@')) {
-            alert("Por favor, digite um e-mail válido.");
-            return;
-        }
-        
-        this.state.email = email;
-        localStorage.setItem('user_email', email);
-        localStorage.setItem('user_goal', this.state.goal);
-
-        // Define a data alvo para o grafico (ex: daqui 3 meses)
-        const date = new Date();
-        date.setMonth(date.getMonth() + 3);
-        const options = { month: 'long', year: 'numeric' };
-        document.getElementById('target-date').textContent = date.toLocaleDateString('pt-BR', options);
-
-        this.switchView('view-chart');
+        }, 800); // Mais rápido que antes
     },
 
     // ---- CAMERA (FREE TRIAL) ----
@@ -163,35 +113,49 @@ const app = {
 
     // ---- RESULTS ----
     showResults() {
+        // Hora atual para brincar com o "Devo comer agora?"
+        const hour = new Date().getHours();
+        let eatNowStatus = "";
+        
         const db = [
-            { name: "Refeição Balanceada", cal: 420, p: 35, c: 40, f: 12 },
-            { name: "Prato Calórico", cal: 850, p: 20, c: 80, f: 45 }
+            { name: "Prato Completo Saudável", cal: 420, p: 35, c: 40, f: 12, v: "Alto" },
+            { name: "Lanche Rápido", cal: 550, p: 15, c: 60, f: 25, v: "Baixo" }
         ];
-        // Força resultado ruim se quer emagrecer para criar dor, resultado bom caso contrário.
-        // Isso é psicologia de PLG.
+
         const isEmagrecer = localStorage.getItem('user_goal') === 'emagrecer';
         const food = isEmagrecer ? db[1] : db[0]; 
+
+        // Regra simples baseada na hora para gamificar
+        if (hour > 22 || hour < 6) {
+            eatNowStatus = "NÃO. Já é muito tarde, evite carboidratos pesados agora.";
+        } else if (hour > 11 && hour < 15) {
+            eatNowStatus = "SIM, excelente horário para sua refeição principal.";
+        } else {
+            eatNowStatus = "SIM, mas com moderação se for apenas um lanche.";
+        }
 
         document.getElementById('food-calories').textContent = food.cal;
         document.getElementById('food-name').textContent = food.name;
         document.getElementById('food-protein').textContent = food.p + "g";
         document.getElementById('food-carbs').textContent = food.c + "g";
         document.getElementById('food-fats').textContent = food.f + "g";
+        document.getElementById('food-vitamins').textContent = food.v;
+        document.getElementById('eat-now-status').textContent = eatNowStatus;
 
         const fbBox = document.getElementById('ai-feedback');
         const fbTitle = document.getElementById('feedback-title');
         const fbText = document.getElementById('feedback-text');
         
-        fbBox.className = 'ai-feedback'; // reset
+        fbBox.className = 'ai-feedback'; 
 
-        if(isEmagrecer) {
+        if(isEmagrecer && food.c > 50) {
             fbBox.classList.add('danger');
-            fbTitle.textContent = "🚨 Atenção ao Déficit Calórico";
-            fbText.textContent = "Baseado no seu perfil, comer este prato com frequência vai atrasar sua meta de peso. O NutriSnap Premium pode montar alternativas deliciosas para você.";
+            fbTitle.textContent = "Alerta de Carboidrato";
+            fbText.textContent = "Este prato possui muito carboidrato, o que atrasa sua perda de peso. Prefira mais proteínas e fibras na próxima refeição.";
         } else {
             fbBox.classList.add('success');
-            fbTitle.textContent = "✅ Bons Macros";
-            fbText.textContent = "Esta refeição atende os requisitos de energia. Com o Premium, ajustamos exatamente para sua hipertrofia.";
+            fbTitle.textContent = "Veredito Positivo";
+            fbText.textContent = "Bons nutrientes! Ajuda a sustentar energia ao longo do dia.";
         }
 
         this.switchView('view-result');
@@ -201,19 +165,6 @@ const app = {
     showPaywall() {
         if(this.stream) this.stream.getTracks().forEach(t => t.stop());
         this.switchView('view-paywall');
-        this.startTimer();
-    },
-
-    startTimer() {
-        let time = 15 * 60; // 15 mins
-        const el = document.getElementById('timer');
-        const int = setInterval(() => {
-            let m = Math.floor(time / 60);
-            let s = time % 60;
-            el.textContent = `${m}:${s < 10 ? '0':''}${s}`;
-            time--;
-            if(time < 0) clearInterval(int);
-        }, 1000);
     }
 };
 
