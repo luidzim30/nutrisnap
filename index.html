@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriSnap - Análise Inteligente de Alimentos</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header>
+            <div class="logo">
+                <span class="icon">🥗</span>
+                <h1>NutriSnap</h1>
+            </div>
+            <p>Sua comida em dados</p>
+        </header>
+
+        <!-- VIEW: CAMERA -->
+        <main id="camera-view" class="view active">
+            <div class="camera-wrapper">
+                <video id="camera-stream" autoplay playsinline></video>
+                <div class="scanner-overlay"></div>
+            </div>
+            <div class="controls">
+                <p>Aponte para a sua refeição</p>
+                <button id="capture-btn" class="primary-btn pulse">
+                    <div class="inner-circle"></div>
+                </button>
+            </div>
+            <canvas id="canvas" style="display:none;"></canvas>
+        </main>
+
+        <!-- VIEW: LOADING -->
+        <main id="loading-view" class="view">
+            <div class="loader-container">
+                <div class="ai-scanner">
+                    <img id="preview-image" src="" alt="Imagem Capturada">
+                    <div class="scan-line"></div>
+                </div>
+                <h2>Analisando Imagem...</h2>
+                <p>Nossa IA está calculando os nutrientes.</p>
+            </div>
+        </main>
+
+        <!-- VIEW: RESULTS -->
+        <main id="result-view" class="view">
+            <div class="result-header">
+                <h2 id="food-name">Prato Identificado</h2>
+                <div class="calories-badge">
+                    <span id="food-calories">0</span>
+                    <small>Kcal</small>
+                </div>
+            </div>
+
+            <div class="macros-grid">
+                <!-- Proteinas -->
+                <div class="macro-card protein">
+                    <div class="macro-icon">🥩</div>
+                    <div class="macro-info">
+                        <span>Proteínas</span>
+                        <h3 id="food-protein">0g</h3>
+                    </div>
+                </div>
+                <!-- Carboidratos -->
+                <div class="macro-card carbs">
+                    <div class="macro-icon">🌾</div>
+                    <div class="macro-info">
+                        <span>Carboidratos</span>
+                        <h3 id="food-carbs">0g</h3>
+                    </div>
+                </div>
+                <!-- Gorduras -->
+                <div class="macro-card fats">
+                    <div class="macro-icon">🥑</div>
+                    <div class="macro-info">
+                        <span>Gorduras</span>
+                        <h3 id="food-fats">0g</h3>
+                    </div>
+                </div>
+            </div>
+
+            <button id="reset-btn" class="secondary-btn">Escanear Nova Refeição</button>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
