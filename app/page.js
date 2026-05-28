@@ -7,6 +7,13 @@ export default function NutriSnapFunnel() {
     const [goal, setGoal] = useState('');
     const [limitReached, setLimitReached] = useState(false);
     
+    // User Profile States
+    const [userName, setUserName] = useState('');
+    const [userAge, setUserAge] = useState('');
+    const [userWeight, setUserWeight] = useState('');
+    const [userHeight, setUserHeight] = useState('');
+    const [userGender, setUserGender] = useState('');
+    
     // Result States
     const [foodData, setFoodData] = useState(null);
     const [photoSrc, setPhotoSrc] = useState('');
