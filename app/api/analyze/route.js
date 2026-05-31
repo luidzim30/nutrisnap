@@ -35,7 +35,7 @@ Seja preciso nas estimativas calorias baseado em porcoes visiveis na foto.`;
         console.log('[v0] Sending image to AI, image length:', image.length);
 
         const result = await generateText({
-            model: gateway('openai/gpt-4o'),
+            model: gateway('google/gemini-2.0-flash'),
             messages: [
                 {
                     role: 'user',
