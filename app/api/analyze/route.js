@@ -32,19 +32,26 @@ Se nao conseguir identificar comida na imagem, retorne:
 
 Seja preciso nas estimativas calorias baseado em porcoes visiveis na foto.`;
 
+        console.log('[v0] Sending image to AI, image length:', image.length);
+
         const result = await generateText({
-            model: gateway('openai/gpt-4o-mini'),
+            model: gateway('openai/gpt-4o'),
             messages: [
                 {
                     role: 'user',
                     content: [
                         { type: 'text', text: prompt },
-                        { type: 'image', image: image }
+                        { 
+                            type: 'image', 
+                            image: image // pass the full data URL directly
+                        }
                     ]
                 }
             ],
-            maxTokens: 1000,
+            maxOutputTokens: 1000,
         });
+        
+        console.log('[v0] AI Response received, length:', result.text?.length);
 
         // Parse the JSON response
         let analysisData;
@@ -68,10 +75,10 @@ Seja preciso nas estimativas calorias baseado em porcoes visiveis na foto.`;
         return Response.json(analysisData);
 
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('[v0] API Error:', error.message, error);
         return Response.json({ 
             identified: false, 
-            error: 'Erro ao analisar imagem' 
+            error: 'Erro ao analisar imagem: ' + error.message 
         }, { status: 500 });
     }
 }
