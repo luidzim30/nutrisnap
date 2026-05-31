@@ -109,8 +109,11 @@ export default function NutriSnapFunnel() {
         setAnalysisLoading(true);
         setAnalysisStatus('Identificando alimentos...');
 
+        console.log('[v0] Starting analysis, image length:', imageData.length);
+
         try {
             // Call the AI analysis API
+            console.log('[v0] Calling /api/analyze...');
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -121,6 +124,7 @@ export default function NutriSnapFunnel() {
             });
 
             const data = await response.json();
+            console.log('[v0] API response:', data);
             
             if (data.identified) {
                 setAnalysisStatus('Calculando valores nutricionais...');

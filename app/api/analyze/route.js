@@ -32,10 +32,7 @@ Se nao conseguir identificar comida na imagem, retorne:
 
 Seja preciso nas estimativas calorias baseado em porcoes visiveis na foto.`;
 
-        // Extract base64 data from data URL
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-        
-        console.log('[v0] Sending image to AI, base64 length:', base64Data.length);
+        console.log('[v0] Sending image to AI, image length:', image.length);
 
         const result = await generateText({
             model: gateway('openai/gpt-4o'),
@@ -46,15 +43,15 @@ Seja preciso nas estimativas calorias baseado em porcoes visiveis na foto.`;
                         { type: 'text', text: prompt },
                         { 
                             type: 'image', 
-                            image: base64Data
+                            image: image // pass the full data URL directly
                         }
                     ]
                 }
             ],
-            maxTokens: 1000,
+            maxOutputTokens: 1000,
         });
         
-        console.log('[v0] AI Response:', result.text);
+        console.log('[v0] AI Response received, length:', result.text?.length);
 
         // Parse the JSON response
         let analysisData;
